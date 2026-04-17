@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Irish Post-Primary Schools</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --deis:    #d63030;
+  --nondeis: #1a6abf;
+  --bg:      #f4f5f7;
+  --white:   #ffffff;
+  --border:  #d0d4dc;
+  --text:    #1a1e2a;
+  --muted:   #6b7280;
+  --accent:  #1a6abf;
+}
+
+html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); }
+
+#app { display: flex; flex-direction: column; height: 100vh; }
+
+/* HEADER */
+#header {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  z-index: 1000;
+  flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+#header h1 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+
+#header .source {
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--bg);
+  padding: 2px 7px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+#controls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.filter-btn .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.filter-btn.on-all    { border-color: #555; color: var(--text); background: #f0f0f0; }
+.filter-btn.on-deis   { border-color: var(--deis);    color: var(--deis);    background: #fff0f0; }
+.filter-btn.on-nondeis{ border-color: var(--nondeis); color: var(--nondeis); background: #eef4ff; }
+
+#stats {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  padding: 4px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+/* MAP */
+#map-wrap { position: relative; flex: 1; }
+#map { width: 100%; height: 100%; }
+
+/* SEARCH */
+#search-wrap {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  width: min(320px, 88vw);
+}
+#search-inner { position: relative; }
+#search {
+  width: 100%;
+  padding: 10px 14px 10px 36px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+#search:focus { border-color: var(--accent); box-shadow: 0 2px 16px rgba(26,106,191,0.2); }
+#search::placeholder { color: var(--muted); }
+#search-icon {
+  position: absolute;
+  left: 12px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+/* LOADING */
+#loading {
+  position: absolute;
+  inset: 0;
+  background: rgba(244,245,247,0.94);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  z-index: 9999;
+  transition: opacity 0.3s;
+}
+#loading.hidden { opacity: 0; pointer-events: none; }
+.spinner {
+  width: 30px; height: 30px;
+  border: 2.5px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#loading-text {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.6;
+  max-width: 300px;
+}
+
+/* POPUP */
+.leaflet-popup-content-wrapper {
+  border-radius: 8px !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
+  border: 1px solid var(--border) !important;
+  padding: 0 !important;
+  overflow: hidden;
+  width: min(300px, 88vw) !important;
+}
+.leaflet-popup-content { margin: 0 !important; width: 100% !important; }
+.leaflet-popup-close-button { top: 10px !important; right: 10px !important; font-size: 18px !important; color: var(--muted) !important; z-index: 10; }
+
+.popup-head {
+  padding: 14px 36px 10px 14px;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+}
+.popup-badge {
+  display: inline-block;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 7px; border-radius: 10px;
+  margin-bottom: 6px;
+}
+.badge-deis    { background: #ffe8e8; color: var(--deis); }
+.badge-nondeis { background: #deeaff; color: var(--nondeis); }
+.popup-name { font-size: 13px; font-weight: 700; line-height: 1.35; color: var(--text); }
+
+.popup-body { padding: 10px 14px 14px; background: var(--white); }
+.popup-row { display: flex; gap: 8px; padding: 3px 0; font-size: 12px; border-bottom: 1px solid #f0f0f0; }
+.popup-row:last-child { border-bottom: none; }
+.popup-row .lbl { color: var(--muted); flex-shrink: 0; width: 80px; }
+.popup-row .val { color: var(--text); word-break: break-word; }
+a.vlink { color: var(--accent); text-decoration: none; }
+a.vlink:hover { text-decoration: underline; }
+
+@media (max-width: 560px) {
+  #header h1 { font-size: 12px; }
+  .filter-btn { padding: 4px 9px; font-size: 11px; }
+  #stats { display: none; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="header">
+    <h1>Post-Primary Schools · Ireland</h1>
+    <span class="source">Dept. of Education</span>
+    <div id="controls">
+      <button class="filter-btn on-all" id="btn-all" onclick="setFilter('all')">
+        <span class="dot" style="background:#555"></span>All
+      </button>
+      <button class="filter-btn" id="btn-deis" onclick="setFilter('deis')">
+        <span class="dot" style="background:var(--deis)"></span>DEIS
+      </button>
+      <button class="filter-btn" id="btn-nondeis" onclick="setFilter('nondeis')">
+        <span class="dot" style="background:var(--nondeis)"></span>Non-DEIS
+      </button>
+      <div id="stats">loading…</div>
+    </div>
+  </div>
+
+  <div id="map-wrap">
+    <div id="map"></div>
+
+    <div id="search-wrap">
+      <div id="search-inner">
+        <span id="search-icon">🔍</span>
+        <input id="search" type="search" placeholder="Search school name…" oninput="filterByName(this.value)">
+      </div>
+    </div>
+
+    <div id="loading">
+      <div class="spinner"></div>
+      <div id="loading-text">Loading schools data…</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// MAP
+const map = L.map('map', { center: [53.35, -7.9], zoom: 7, tap: true });
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  maxZoom: 19
+}).addTo(map);
+
+// STATE
+let allSchools = [], activeFilter = 'all', searchTerm = '';
+const group = L.layerGroup().addTo(map);
+
+// MARKER
+function opts(deis) {
+  return {
+    radius: 6,
+    fillColor:   deis ? '#d63030' : '#1a6abf',
+    color:       deis ? '#8b0000' : '#0a3d7a',
+    weight: 1, opacity: 1, fillOpacity: 0.82
+  };
+}
+
+// POPUP
+const LABELS = {
+  Roll_Number: 'Roll No.',
+  Phone: 'Phone',
+  Email: 'Email',
+  Post_Primary_School_Type: 'Type',
+  Ethos_Religion: 'Ethos',
+  School_Gender___Post_Primary: 'Gender',
+  Irish_Classification___Post_Pri: 'Irish class.',
+  Pupil_Attendance_Type: 'Attendance',
+  Fee_Paying_School__Y_N_: 'Fee paying',
+  Principal_Name: 'Principal',
+};
+
+function getVal(p, ...keys) {
+  for (const k of keys) {
+    const v = p[k];
+    if (v != null && v !== '' && v !== 'Null' && v !== 'null') return v;
+  }
+  return null;
+}
+
+function buildPopup(p) {
+  const deis = p.DEIS__Y_N_ === 'Y';
+  const name = p.Official_School_Name || p.School_Name || p.Official_Name || p.Name || 'Unknown School';
+  let rows = '';
+  Object.entries(LABELS).forEach(([k, lbl]) => {
+    const v = p[k];
+    if (v == null || v === '' || v === 'Null' || v === 'null') return;
+    let val;
+    if (k === 'Website') val = `<a class="vlink" href="${v}" target="_blank">${v.replace(/^https?:\/\//,'').replace(/\/$/,'')}</a>`;
+    else if (k === 'Email') val = `<a class="vlink" href="mailto:${v}">${v}</a>`;
+    else val = `<span class="val">${v}</span>`;
+    rows += `<div class="popup-row"><span class="lbl">${lbl}</span>${val}</div>`;
+  });
+  const f = getVal(p, 'FEMALE');
+  const m = getVal(p, 'MALE');
+  const tot = getVal(p, 'Total');
+  if (f != null && m != null) {
+    rows += `<div class="popup-row"><span class="lbl">Students</span><span class="val">${f} (G) · ${m} (B)</span></div>`;
+  } else if (f != null) {
+    rows += `<div class="popup-row"><span class="lbl">Students</span><span class="val">${f} (G)</span></div>`;
+  } else if (m != null) {
+    rows += `<div class="popup-row"><span class="lbl">Students</span><span class="val">${m} (B)</span></div>`;
+  } else if (tot != null) {
+    rows += `<div class="popup-row"><span class="lbl">Students</span><span class="val">${tot}</span></div>`;
+  }
+
+  return `<div class="popup-head">
+    <div class="popup-badge ${deis?'badge-deis':'badge-nondeis'}">${deis?'DEIS':'Non-DEIS'}</div>
+    <div class="popup-name">${name}</div>
+  </div><div class="popup-body">${rows}</div>`;
+}
+
+// RENDER
+function render() {
+  group.clearLayers();
+  let n = 0;
+  allSchools.forEach(({props, lat, lng}) => {
+    const deis = props.DEIS__Y_N_ === 'Y';
+    if (activeFilter === 'deis'    && !deis) return;
+    if (activeFilter === 'nondeis' &&  deis) return;
+    const name = (props.Official_School_Name || props.School_Name || props.Official_Name || '').toLowerCase();
+    if (searchTerm && !name.includes(searchTerm)) return;
+    L.circleMarker([lat, lng], opts(deis))
+      .bindPopup(buildPopup(props), { maxWidth: 310 })
+      .addTo(group);
+    n++;
+  });
+  document.getElementById('stats').textContent =
+    n === allSchools.length ? `${n} schools` : `${n} of ${allSchools.length}`;
+}
+
+function setFilter(f) {
+  activeFilter = f;
+  document.getElementById('btn-all').className    = 'filter-btn' + (f==='all'    ?' on-all':'');
+  document.getElementById('btn-deis').className   = 'filter-btn' + (f==='deis'   ?' on-deis':'');
+  document.getElementById('btn-nondeis').className= 'filter-btn' + (f==='nondeis'?' on-nondeis':'');
+  render();
+}
+function filterByName(v) { searchTerm = v.trim().toLowerCase(); render(); }
+
+// DATA LOADING — tries layers 6, 0, 1, 2 in sequence
+function setMsg(html) {
+  const el = document.getElementById('loading-text');
+  el.innerHTML = html;
+  document.querySelector('.spinner').style.display =
+    html.includes('strong') ? 'none' : '';
+}
+
+async function tryLayer(layer) {
+  const url = [
+    'https://services6.arcgis.com/MmUrOQU5v1he9gfS/arcgis/rest/services/',
+    'Post_Primary_Schools_Ireland/FeatureServer/', layer,
+    '/query?where=1%3D1&outFields=*&outSR=4326&f=geojson&resultRecordCount=2000'
+  ].join('');
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message);
+  if (!d.features?.length) throw new Error('no features');
+  return d.features;
+}
+
+(async () => {
+  for (const layer of [6, 0, 1, 2, 3]) {
+    try {
+      setMsg(`Checking layer ${layer}…`);
+      const features = await tryLayer(layer);
+      allSchools = features
+        .filter(f => f.geometry?.coordinates?.length >= 2)
+        .map(f => ({
+          props: f.properties,
+          lng: f.geometry.coordinates[0],
+          lat: f.geometry.coordinates[1]
+        }))
+        .filter(f => f.lat !== 0 && f.lng !== 0);
+      render();
+      document.getElementById('loading').classList.add('hidden');
+      return;
+    } catch(e) {
+      console.warn(`Layer ${layer}:`, e.message);
+    }
+  }
+  setMsg(`<strong style="color:#c00">Could not load data.</strong><br><br>
+    This is likely a network restriction in the preview iframe.<br><br>
+    <b>Download the file and open it in your browser</b> — 
+    it will load live from the Dept. of Education ArcGIS service.`);
+})();
+</script>
+</body>
+</html>
