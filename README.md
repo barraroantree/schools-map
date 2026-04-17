@@ -2,6 +2,11 @@
 
 An interactive map of Irish post-primary schools, built from the Department of Education's ArcGIS REST service. Pan and zoom around Ireland, filter by DEIS status, and search by school name. Click any marker to see school details.
 
+## Live map
+
+View the deployed map on GitHub Pages:  
+https://barraroantree.github.io/schools-map/postprimary_schools_map.html
+
 ## Usage
 
 Open `postprimary_schools_map.html` directly in a browser (Chrome, Firefox, Safari). No build step or server needed — it fetches live data from the Department of Education on load.
