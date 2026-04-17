@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Irish Post-Primary Schools</title>
+<title>Irish Schools Map</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
@@ -80,9 +80,12 @@ html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; ba
   white-space: nowrap;
 }
 .filter-btn .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.filter-btn.on-all    { border-color: #555; color: var(--text); background: #f0f0f0; }
-.filter-btn.on-deis   { border-color: var(--deis);    color: var(--deis);    background: #fff0f0; }
-.filter-btn.on-nondeis{ border-color: var(--nondeis); color: var(--nondeis); background: #eef4ff; }
+.filter-btn.on-all      { border-color: #555;     color: var(--text);    background: #f0f0f0; }
+.filter-btn.on-deis     { border-color: var(--deis);    color: var(--deis);    background: #fff0f0; }
+.filter-btn.on-nondeis  { border-color: var(--nondeis); color: var(--nondeis); background: #eef4ff; }
+.filter-btn.on-primary  { border-color: #2e8540; color: #2e8540; background: #eaf5ec; }
+
+#controls .divider { width: 1px; height: 18px; background: var(--border); margin: 0 2px; }
 
 #stats {
   font-size: 11px;
@@ -207,7 +210,7 @@ a.vlink:hover { text-decoration: underline; }
 <body>
 <div id="app">
   <div id="header">
-    <h1>Post-Primary Schools · Ireland</h1>
+    <h1>Irish Schools Map</h1>
     <span class="source">Dept. of Education</span>
     <div id="controls">
       <button class="filter-btn on-all" id="btn-all" onclick="setFilter('all')">
@@ -218,6 +221,10 @@ a.vlink:hover { text-decoration: underline; }
       </button>
       <button class="filter-btn" id="btn-nondeis" onclick="setFilter('nondeis')">
         <span class="dot" style="background:var(--nondeis)"></span>Non-DEIS
+      </button>
+      <div class="divider"></div>
+      <button class="filter-btn" id="btn-primary" onclick="togglePrimary()">
+        <span class="dot" style="background:#2e8540"></span>Primary
       </button>
       <div id="stats">loading…</div>
     </div>
@@ -250,7 +257,9 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 // STATE
 let allSchools = [], activeFilter = 'all', searchTerm = '';
+let primarySchools = [], showPrimary = false;
 const group = L.layerGroup().addTo(map);
+const primaryGroup = L.layerGroup().addTo(map);
 
 // MARKER
 function opts(deis) {
@@ -320,6 +329,82 @@ function buildPopup(p) {
   </div><div class="popup-body">${rows}</div>`;
 }
 
+// PRIMARY MARKER
+function primaryOpts(deis) {
+  return {
+    radius: 5,
+    fillColor: deis ? '#e07b00' : '#2e8540',
+    color:     deis ? '#9a5000' : '#1a5428',
+    weight: 1, opacity: 1, fillOpacity: 0.82
+  };
+}
+
+// PRIMARY POPUP
+const PRIMARY_LABELS = {
+  Roll_Number: 'Roll No.',
+  Ethos_Description: 'Ethos',
+  Irish_Classification_Descriptio: 'Irish class.',
+};
+
+function buildPrimaryPopup(p) {
+  const deis = p.DEIS__Y_N_ === 'Y';
+  const name = p.Official_Name || 'Unknown School';
+  let rows = '';
+  Object.entries(PRIMARY_LABELS).forEach(([k, lbl]) => {
+    const v = p[k];
+    if (v == null || v === '' || v === 'Null' || v === 'null') return;
+    rows += `<div class="popup-row"><span class="lbl">${lbl}</span><span class="val">${v}</span></div>`;
+  });
+  if (p.Gaeltacht_Indicator__Y_N_ === 'Y') {
+    rows += `<div class="popup-row"><span class="lbl">Gaeltacht</span><span class="val">Yes</span></div>`;
+  }
+  const f = getVal(p, 'Female');
+  const m = getVal(p, 'Male');
+  const tot = getVal(p, 'Total');
+  if (f != null && m != null) {
+    rows += `<div class="popup-row"><span class="lbl">Students</span><span class="val">${f} (G) · ${m} (B)</span></div>`;
+  } else if (f != null) {
+    rows += `<div class="popup-row"><span class="lbl">Students</span><span class="val">${f} (G)</span></div>`;
+  } else if (m != null) {
+    rows += `<div class="popup-row"><span class="lbl">Students</span><span class="val">${m} (B)</span></div>`;
+  } else if (tot != null) {
+    rows += `<div class="popup-row"><span class="lbl">Students</span><span class="val">${tot}</span></div>`;
+  }
+  if (p.Roll_Number) {
+    const url = `https://www.gov.ie/en/school-reports/?roll_number=${encodeURIComponent(p.Roll_Number)}`;
+    rows += `<div class="popup-row"><span class="lbl">Inspections</span><a class="vlink" href="${url}" target="_blank">View reports</a></div>`;
+  }
+  return `<div class="popup-head">
+    <div class="popup-badge ${deis?'badge-deis':'badge-nondeis'}">${deis?'DEIS':'Non-DEIS'}</div>
+    <div class="popup-name">${name}</div>
+  </div><div class="popup-body">${rows}</div>`;
+}
+
+function renderPrimary() {
+  primaryGroup.clearLayers();
+  if (!showPrimary) return;
+  primarySchools.forEach(({props, lat, lng}) => {
+    const deis = props.DEIS__Y_N_ === 'Y';
+    if (activeFilter === 'deis'    && !deis) return;
+    if (activeFilter === 'nondeis' &&  deis) return;
+    const name = (props.Official_Name || '').toLowerCase();
+    if (searchTerm && !name.includes(searchTerm)) return;
+    L.circleMarker([lat, lng], primaryOpts(deis))
+      .bindPopup(buildPrimaryPopup(props), { maxWidth: 310 })
+      .addTo(primaryGroup);
+  });
+}
+
+function togglePrimary() {
+  showPrimary = !showPrimary;
+  document.getElementById('btn-primary').className = 'filter-btn' + (showPrimary ? ' on-primary' : '');
+  if (showPrimary && primarySchools.length === 0) {
+    loadPrimarySchools();
+  } else {
+    renderPrimary();
+  }
+}
+
 // RENDER
 function render() {
   group.clearLayers();
@@ -345,10 +430,35 @@ function setFilter(f) {
   document.getElementById('btn-deis').className   = 'filter-btn' + (f==='deis'   ?' on-deis':'');
   document.getElementById('btn-nondeis').className= 'filter-btn' + (f==='nondeis'?' on-nondeis':'');
   render();
+  renderPrimary();
 }
-function filterByName(v) { searchTerm = v.trim().toLowerCase(); render(); }
+function filterByName(v) { searchTerm = v.trim().toLowerCase(); render(); renderPrimary(); }
 
-// DATA LOADING — tries layers 6, 0, 1, 2 in sequence
+// PRIMARY DATA LOADING
+async function loadPrimarySchools() {
+  try {
+    const url = 'https://services6.arcgis.com/MmUrOQU5v1he9gfS/arcgis/rest/services/' +
+      'MainstreamPrimarySchoolsIreland/FeatureServer/0' +
+      '/query?where=1%3D1&outFields=*&outSR=4326&f=geojson&resultRecordCount=5000';
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d = await r.json();
+    if (d.error) throw new Error(d.error.message);
+    primarySchools = (d.features || [])
+      .filter(f => f.geometry?.coordinates?.length >= 2)
+      .map(f => ({
+        props: f.properties,
+        lng: f.geometry.coordinates[0],
+        lat: f.geometry.coordinates[1]
+      }))
+      .filter(f => f.lat !== 0 && f.lng !== 0);
+    renderPrimary();
+  } catch(e) {
+    console.warn('Primary schools load failed:', e.message);
+  }
+}
+
+// POST-PRIMARY DATA LOADING — tries layers 6, 0, 1, 2 in sequence
 function setMsg(html) {
   const el = document.getElementById('loading-text');
   el.innerHTML = html;
