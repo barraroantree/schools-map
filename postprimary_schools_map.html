@@ -309,6 +309,10 @@ function buildPopup(p) {
   } else if (tot != null) {
     rows += `<div class="popup-row"><span class="lbl">Students</span><span class="val">${tot}</span></div>`;
   }
+  if (p.Roll_Number) {
+    const url = `https://www.gov.ie/en/school-reports/?roll_number=${encodeURIComponent(p.Roll_Number)}`;
+    rows += `<div class="popup-row"><span class="lbl">Inspections</span><a class="vlink" href="${url}" target="_blank">View reports</a></div>`;
+  }
 
   return `<div class="popup-head">
     <div class="popup-badge ${deis?'badge-deis':'badge-nondeis'}">${deis?'DEIS':'Non-DEIS'}</div>
