@@ -10,14 +10,15 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --deis:    #d63030;
-  --nondeis: #1a6abf;
-  --bg:      #f4f5f7;
-  --white:   #ffffff;
-  --border:  #d0d4dc;
-  --text:    #1a1e2a;
-  --muted:   #6b7280;
-  --accent:  #1a6abf;
+  --boys:   #1a6abf;
+  --girls:  #c0147a;
+  --mixed:  #6b7280;
+  --bg:     #f4f5f7;
+  --white:  #ffffff;
+  --border: #d0d4dc;
+  --text:   #1a1e2a;
+  --muted:  #6b7280;
+  --accent: #1a6abf;
 }
 
 html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); }
@@ -80,12 +81,29 @@ html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; ba
   white-space: nowrap;
 }
 .filter-btn .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.filter-btn.on-all      { border-color: #555;     color: var(--text);    background: #f0f0f0; }
-.filter-btn.on-deis     { border-color: var(--deis);    color: var(--deis);    background: #fff0f0; }
-.filter-btn.on-nondeis  { border-color: var(--nondeis); color: var(--nondeis); background: #eef4ff; }
-.filter-btn.on-primary  { border-color: #2e8540; color: #2e8540; background: #eaf5ec; }
+.filter-btn.on-all   { border-color: #555;         color: var(--text);  background: #f0f0f0; }
+.filter-btn.on-boys  { border-color: var(--boys);  color: var(--boys);  background: #eef4ff; }
+.filter-btn.on-girls { border-color: var(--girls); color: var(--girls); background: #fceef7; }
 
 #controls .divider { width: 1px; height: 18px; background: var(--border); margin: 0 2px; }
+
+#type-select {
+  padding: 5px 28px 5px 11px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7280'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+}
+#type-select:focus { border-color: var(--accent); }
 
 #stats {
   font-size: 11px;
@@ -100,6 +118,26 @@ html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; ba
 /* MAP */
 #map-wrap { position: relative; flex: 1; }
 #map { width: 100%; height: 100%; }
+
+/* LEGEND */
+#legend {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 1000;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 11px;
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  line-height: 1.9;
+}
+#legend .leg-row { display: flex; align-items: center; gap: 7px; }
+#legend .leg-circle  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+#legend .leg-diamond { width: 8px;  height: 8px;  transform: rotate(45deg); flex-shrink: 0; }
+#legend .leg-section { margin-top: 5px; padding-top: 5px; border-top: 1px solid var(--border); }
 
 /* SEARCH */
 #search-wrap {
@@ -180,17 +218,8 @@ html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; ba
   background: var(--white);
   border-bottom: 1px solid var(--border);
 }
-.popup-badge {
-  display: inline-block;
-  font-size: 10px; font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  padding: 2px 7px; border-radius: 10px;
-  margin-bottom: 6px;
-}
-.badge-deis    { background: #ffe8e8; color: var(--deis); }
-.badge-nondeis { background: #deeaff; color: var(--nondeis); }
 .popup-name { font-size: 13px; font-weight: 700; line-height: 1.35; color: var(--text); }
+.popup-sub  { font-size: 11px; color: var(--muted); margin-top: 3px; }
 
 .popup-body { padding: 10px 14px 14px; background: var(--white); }
 .popup-row { display: flex; gap: 8px; padding: 3px 0; font-size: 12px; border-bottom: 1px solid #f0f0f0; }
@@ -213,25 +242,35 @@ a.vlink:hover { text-decoration: underline; }
     <h1>Irish Schools Map</h1>
     <span class="source">Dept. of Education</span>
     <div id="controls">
-      <button class="filter-btn on-all" id="btn-all" onclick="setFilter('all')">
+      <button class="filter-btn on-all" id="btn-all"   onclick="setGender('all')">
         <span class="dot" style="background:#555"></span>All
       </button>
-      <button class="filter-btn" id="btn-deis" onclick="setFilter('deis')">
-        <span class="dot" style="background:var(--deis)"></span>DEIS
+      <button class="filter-btn" id="btn-boys"  onclick="setGender('boys')">
+        <span class="dot" style="background:var(--boys)"></span>Boys
       </button>
-      <button class="filter-btn" id="btn-nondeis" onclick="setFilter('nondeis')">
-        <span class="dot" style="background:var(--nondeis)"></span>Non-DEIS
+      <button class="filter-btn" id="btn-girls" onclick="setGender('girls')">
+        <span class="dot" style="background:var(--girls)"></span>Girls
       </button>
       <div class="divider"></div>
-      <button class="filter-btn" id="btn-primary" onclick="togglePrimary()">
-        <span class="dot" style="background:#2e8540"></span>Primary
-      </button>
+      <select id="type-select" onchange="setType(this.value)">
+        <option value="all">All types</option>
+      </select>
       <div id="stats">loading…</div>
     </div>
   </div>
 
   <div id="map-wrap">
     <div id="map"></div>
+
+    <div id="legend">
+      <div class="leg-row"><div class="leg-circle"  style="background:var(--mixed);border:1px solid #374151"></div> Post-primary</div>
+      <div class="leg-row"><div class="leg-diamond" style="background:var(--mixed);border:1.5px solid #374151"></div> Primary</div>
+      <div class="leg-section">
+        <div class="leg-row"><div class="leg-circle" style="background:var(--boys)"></div> Boys</div>
+        <div class="leg-row"><div class="leg-circle" style="background:var(--girls)"></div> Girls</div>
+        <div class="leg-row"><div class="leg-circle" style="background:var(--mixed)"></div> Mixed</div>
+      </div>
+    </div>
 
     <div id="search-wrap">
       <div id="search-inner">
@@ -256,35 +295,52 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 // STATE
-let allSchools = [], activeFilter = 'all', searchTerm = '';
-let primarySchools = [], showPrimary = false;
+let allSchools = [], primarySchools = [];
+let genderFilter = 'all', typeFilter = 'all', searchTerm = '';
 const group = L.layerGroup().addTo(map);
 const primaryGroup = L.layerGroup().addTo(map);
 
-// MARKER
-function opts(deis) {
-  return {
-    radius: 6,
-    fillColor:   deis ? '#d63030' : '#1a6abf',
-    color:       deis ? '#8b0000' : '#0a3d7a',
-    weight: 1, opacity: 1, fillOpacity: 0.82
-  };
+// GENDER
+function getGender(p, isPrimary) {
+  const raw = isPrimary
+    ? (p.School_Gender || p.Gender || '')
+    : (p.School_Gender___Post_Primary || p.Gender || '');
+  const g = raw.toLowerCase();
+  if (g.includes('girl') || g.includes('female')) return 'girls';
+  if (g.includes('boy')  || g.includes('male'))   return 'boys';
+  return 'mixed';
 }
 
-// POPUP
-const LABELS = {
-  Roll_Number: 'Roll No.',
-  Phone: 'Phone',
-  Email: 'Email',
-  Post_Primary_School_Type: 'Type',
-  Ethos_Religion: 'Ethos',
-  School_Gender___Post_Primary: 'Gender',
-  Irish_Classification___Post_Pri: 'Irish class.',
-  Pupil_Attendance_Type: 'Attendance',
-  Fee_Paying_School__Y_N_: 'Fee paying',
-  Principal_Name: 'Principal',
-};
+function genderColors(gender) {
+  if (gender === 'boys')  return { fill: '#1a6abf', stroke: '#0a3d7a' };
+  if (gender === 'girls') return { fill: '#c0147a', stroke: '#800050' };
+  return { fill: '#6b7280', stroke: '#374151' };
+}
 
+// POST-PRIMARY MARKER — circle
+function circleOpts(gender) {
+  const c = genderColors(gender);
+  return { radius: 6, fillColor: c.fill, color: c.stroke, weight: 1, opacity: 1, fillOpacity: 0.82 };
+}
+
+// PRIMARY MARKER — diamond (rotated square divIcon)
+function diamondIcon(gender) {
+  const { fill, stroke } = genderColors(gender);
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:8px;height:8px;background:${fill};border:1.5px solid ${stroke};transform:rotate(45deg);"></div>`,
+    iconSize: [10, 10],
+    iconAnchor: [5, 5]
+  });
+}
+
+// SCHOOL TYPE
+function getSchoolType(p, isPrimary) {
+  if (isPrimary) return (p.School_Type || p.Type_Description || 'Primary').trim();
+  return (p.Post_Primary_School_Type || p.School_Type || '').trim();
+}
+
+// POPUP HELPERS
 function getVal(p, ...keys) {
   for (const k of keys) {
     const v = p[k];
@@ -292,178 +348,177 @@ function getVal(p, ...keys) {
   }
   return null;
 }
+function row(lbl, val) {
+  return `<div class="popup-row"><span class="lbl">${lbl}</span><span class="val">${val}</span></div>`;
+}
+function linkRow(lbl, href, text) {
+  return `<div class="popup-row"><span class="lbl">${lbl}</span><a class="vlink" href="${href}" target="_blank">${text}</a></div>`;
+}
+
+// POST-PRIMARY POPUP
+const PP_LABELS = {
+  Roll_Number:                    'Roll No.',
+  Phone:                          'Phone',
+  Email:                          'Email',
+  Post_Primary_School_Type:       'Type',
+  Ethos_Religion:                 'Ethos',
+  School_Gender___Post_Primary:   'Gender',
+  Irish_Classification___Post_Pri:'Irish class.',
+  Pupil_Attendance_Type:          'Attendance',
+  Fee_Paying_School__Y_N_:        'Fee paying',
+  Principal_Name:                 'Principal',
+};
 
 function buildPopup(p) {
   const deis = p.DEIS__Y_N_ === 'Y';
   const name = p.Official_School_Name || p.School_Name || p.Official_Name || p.Name || 'Unknown School';
-  let rows = '';
-  Object.entries(LABELS).forEach(([k, lbl]) => {
+  let rows = row('DEIS', deis ? 'Yes' : 'No');
+  Object.entries(PP_LABELS).forEach(([k, lbl]) => {
     const v = p[k];
     if (v == null || v === '' || v === 'Null' || v === 'null') return;
-    let val;
-    if (k === 'Website') val = `<a class="vlink" href="${v}" target="_blank">${v.replace(/^https?:\/\//,'').replace(/\/$/,'')}</a>`;
-    else if (k === 'Email') val = `<a class="vlink" href="mailto:${v}">${v}</a>`;
-    else val = `<span class="val">${v}</span>`;
-    rows += `<div class="popup-row"><span class="lbl">${lbl}</span>${val}</div>`;
+    if (k === 'Email') rows += linkRow(lbl, `mailto:${v}`, v);
+    else rows += row(lbl, v);
   });
-  const f = getVal(p, 'FEMALE');
-  const m = getVal(p, 'MALE');
-  const tot = getVal(p, 'Total');
-  if (f != null && m != null) {
-    rows += `<div class="popup-row"><span class="lbl">Students</span><span class="val">${f} (G) · ${m} (B)</span></div>`;
-  } else if (f != null) {
-    rows += `<div class="popup-row"><span class="lbl">Students</span><span class="val">${f} (G)</span></div>`;
-  } else if (m != null) {
-    rows += `<div class="popup-row"><span class="lbl">Students</span><span class="val">${m} (B)</span></div>`;
-  } else if (tot != null) {
-    rows += `<div class="popup-row"><span class="lbl">Students</span><span class="val">${tot}</span></div>`;
-  }
+  const f = getVal(p, 'FEMALE'), m = getVal(p, 'MALE'), tot = getVal(p, 'Total');
+  if (f != null && m != null) rows += row('Students', `${f} (G) · ${m} (B)`);
+  else if (f != null)         rows += row('Students', `${f} (G)`);
+  else if (m != null)         rows += row('Students', `${m} (B)`);
+  else if (tot != null)       rows += row('Students', tot);
   if (p.Roll_Number) {
     const url = `https://www.gov.ie/en/school-reports/?roll_number=${encodeURIComponent(p.Roll_Number)}`;
-    rows += `<div class="popup-row"><span class="lbl">Inspections</span><a class="vlink" href="${url}" target="_blank">View reports</a></div>`;
+    rows += linkRow('Inspections', url, 'View reports');
   }
-
   return `<div class="popup-head">
-    <div class="popup-badge ${deis?'badge-deis':'badge-nondeis'}">${deis?'DEIS':'Non-DEIS'}</div>
     <div class="popup-name">${name}</div>
+    <div class="popup-sub">Post-primary</div>
   </div><div class="popup-body">${rows}</div>`;
 }
 
-// PRIMARY MARKER
-function primaryOpts(deis) {
-  return {
-    radius: 5,
-    fillColor: deis ? '#e07b00' : '#2e8540',
-    color:     deis ? '#9a5000' : '#1a5428',
-    weight: 1, opacity: 1, fillOpacity: 0.82
-  };
-}
-
 // PRIMARY POPUP
-const PRIMARY_LABELS = {
-  Roll_Number: 'Roll No.',
-  Ethos_Description: 'Ethos',
+const PRI_LABELS = {
+  Roll_Number:                     'Roll No.',
+  Ethos_Description:               'Ethos',
   Irish_Classification_Descriptio: 'Irish class.',
 };
 
 function buildPrimaryPopup(p) {
   const deis = p.DEIS__Y_N_ === 'Y';
   const name = p.Official_Name || 'Unknown School';
-  let rows = '';
-  Object.entries(PRIMARY_LABELS).forEach(([k, lbl]) => {
+  let rows = row('DEIS', deis ? 'Yes' : 'No');
+  Object.entries(PRI_LABELS).forEach(([k, lbl]) => {
     const v = p[k];
     if (v == null || v === '' || v === 'Null' || v === 'null') return;
-    rows += `<div class="popup-row"><span class="lbl">${lbl}</span><span class="val">${v}</span></div>`;
+    rows += row(lbl, v);
   });
-  if (p.Gaeltacht_Indicator__Y_N_ === 'Y') {
-    rows += `<div class="popup-row"><span class="lbl">Gaeltacht</span><span class="val">Yes</span></div>`;
-  }
-  const f = getVal(p, 'Female');
-  const m = getVal(p, 'Male');
-  const tot = getVal(p, 'Total');
-  if (f != null && m != null) {
-    rows += `<div class="popup-row"><span class="lbl">Students</span><span class="val">${f} (G) · ${m} (B)</span></div>`;
-  } else if (f != null) {
-    rows += `<div class="popup-row"><span class="lbl">Students</span><span class="val">${f} (G)</span></div>`;
-  } else if (m != null) {
-    rows += `<div class="popup-row"><span class="lbl">Students</span><span class="val">${m} (B)</span></div>`;
-  } else if (tot != null) {
-    rows += `<div class="popup-row"><span class="lbl">Students</span><span class="val">${tot}</span></div>`;
-  }
+  if (p.Gaeltacht_Indicator__Y_N_ === 'Y') rows += row('Gaeltacht', 'Yes');
+  const f = getVal(p, 'Female'), m = getVal(p, 'Male'), tot = getVal(p, 'Total');
+  if (f != null && m != null) rows += row('Students', `${f} (G) · ${m} (B)`);
+  else if (f != null)         rows += row('Students', `${f} (G)`);
+  else if (m != null)         rows += row('Students', `${m} (B)`);
+  else if (tot != null)       rows += row('Students', tot);
   if (p.Roll_Number) {
     const url = `https://www.gov.ie/en/school-reports/?roll_number=${encodeURIComponent(p.Roll_Number)}`;
-    rows += `<div class="popup-row"><span class="lbl">Inspections</span><a class="vlink" href="${url}" target="_blank">View reports</a></div>`;
+    rows += linkRow('Inspections', url, 'View reports');
   }
   return `<div class="popup-head">
-    <div class="popup-badge ${deis?'badge-deis':'badge-nondeis'}">${deis?'DEIS':'Non-DEIS'}</div>
     <div class="popup-name">${name}</div>
+    <div class="popup-sub">Primary</div>
   </div><div class="popup-body">${rows}</div>`;
 }
 
-function renderPrimary() {
-  primaryGroup.clearLayers();
-  if (!showPrimary) return;
-  primarySchools.forEach(({props, lat, lng}) => {
-    const deis = props.DEIS__Y_N_ === 'Y';
-    if (activeFilter === 'deis'    && !deis) return;
-    if (activeFilter === 'nondeis' &&  deis) return;
-    const name = (props.Official_Name || '').toLowerCase();
-    if (searchTerm && !name.includes(searchTerm)) return;
-    L.circleMarker([lat, lng], primaryOpts(deis))
-      .bindPopup(buildPrimaryPopup(props), { maxWidth: 310 })
-      .addTo(primaryGroup);
+// TYPE DROPDOWN — built after both datasets load
+function buildTypeOptions() {
+  const types = new Set();
+  allSchools.forEach(({props}) => {
+    const t = getSchoolType(props, false);
+    if (t) types.add(t);
   });
-}
-
-function togglePrimary() {
-  showPrimary = !showPrimary;
-  document.getElementById('btn-primary').className = 'filter-btn' + (showPrimary ? ' on-primary' : '');
-  if (showPrimary && primarySchools.length === 0) {
-    loadPrimarySchools();
-  } else {
-    renderPrimary();
-  }
+  primarySchools.forEach(({props}) => {
+    const t = getSchoolType(props, true);
+    if (t) types.add(t);
+  });
+  const sel = document.getElementById('type-select');
+  const current = sel.value;
+  sel.innerHTML = '<option value="all">All types</option>' +
+    [...types].sort().map(t => `<option value="${t}">${t}</option>`).join('');
+  if ([...types].includes(current)) sel.value = current;
 }
 
 // RENDER
+function passesFilter(p, isPrimary) {
+  if (genderFilter !== 'all' && getGender(p, isPrimary) !== genderFilter) return false;
+  if (typeFilter   !== 'all' && getSchoolType(p, isPrimary) !== typeFilter) return false;
+  return true;
+}
+
 function render() {
   group.clearLayers();
   let n = 0;
   allSchools.forEach(({props, lat, lng}) => {
-    const deis = props.DEIS__Y_N_ === 'Y';
-    if (activeFilter === 'deis'    && !deis) return;
-    if (activeFilter === 'nondeis' &&  deis) return;
     const name = (props.Official_School_Name || props.School_Name || props.Official_Name || '').toLowerCase();
     if (searchTerm && !name.includes(searchTerm)) return;
-    L.circleMarker([lat, lng], opts(deis))
+    if (!passesFilter(props, false)) return;
+    L.circleMarker([lat, lng], circleOpts(getGender(props, false)))
       .bindPopup(buildPopup(props), { maxWidth: 310 })
       .addTo(group);
     n++;
   });
+  return n;
+}
+
+function renderPrimary() {
+  primaryGroup.clearLayers();
+  let n = 0;
+  primarySchools.forEach(({props, lat, lng}) => {
+    const name = (props.Official_Name || '').toLowerCase();
+    if (searchTerm && !name.includes(searchTerm)) return;
+    if (!passesFilter(props, true)) return;
+    L.marker([lat, lng], { icon: diamondIcon(getGender(props, true)) })
+      .bindPopup(buildPrimaryPopup(props), { maxWidth: 310 })
+      .addTo(primaryGroup);
+    n++;
+  });
+  return n;
+}
+
+function renderAll() {
+  const n1 = render();
+  const n2 = renderPrimary();
+  const total = allSchools.length + primarySchools.length;
+  const shown = n1 + n2;
   document.getElementById('stats').textContent =
-    n === allSchools.length ? `${n} schools` : `${n} of ${allSchools.length}`;
+    shown === total ? `${shown} schools` : `${shown} of ${total}`;
 }
 
-function setFilter(f) {
-  activeFilter = f;
-  document.getElementById('btn-all').className    = 'filter-btn' + (f==='all'    ?' on-all':'');
-  document.getElementById('btn-deis').className   = 'filter-btn' + (f==='deis'   ?' on-deis':'');
-  document.getElementById('btn-nondeis').className= 'filter-btn' + (f==='nondeis'?' on-nondeis':'');
-  render();
-  renderPrimary();
+function setGender(g) {
+  genderFilter = g;
+  document.getElementById('btn-all').className   = 'filter-btn' + (g === 'all'   ? ' on-all'   : '');
+  document.getElementById('btn-boys').className  = 'filter-btn' + (g === 'boys'  ? ' on-boys'  : '');
+  document.getElementById('btn-girls').className = 'filter-btn' + (g === 'girls' ? ' on-girls' : '');
+  renderAll();
 }
-function filterByName(v) { searchTerm = v.trim().toLowerCase(); render(); renderPrimary(); }
+function setType(t)       { typeFilter = t;                          renderAll(); }
+function filterByName(v)  { searchTerm = v.trim().toLowerCase();     renderAll(); }
 
-// PRIMARY DATA LOADING
+// DATA LOADING
 async function loadPrimarySchools() {
-  try {
-    const url = 'https://services6.arcgis.com/MmUrOQU5v1he9gfS/arcgis/rest/services/' +
-      'MainstreamPrimarySchoolsIreland/FeatureServer/0' +
-      '/query?where=1%3D1&outFields=*&outSR=4326&f=geojson&resultRecordCount=5000';
-    const r = await fetch(url);
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const d = await r.json();
-    if (d.error) throw new Error(d.error.message);
-    primarySchools = (d.features || [])
-      .filter(f => f.geometry?.coordinates?.length >= 2)
-      .map(f => ({
-        props: f.properties,
-        lng: f.geometry.coordinates[0],
-        lat: f.geometry.coordinates[1]
-      }))
-      .filter(f => f.lat !== 0 && f.lng !== 0);
-    renderPrimary();
-  } catch(e) {
-    console.warn('Primary schools load failed:', e.message);
-  }
+  const url = 'https://services6.arcgis.com/MmUrOQU5v1he9gfS/arcgis/rest/services/' +
+    'MainstreamPrimarySchoolsIreland/FeatureServer/0' +
+    '/query?where=1%3D1&outFields=*&outSR=4326&f=geojson&resultRecordCount=5000';
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message);
+  primarySchools = (d.features || [])
+    .filter(f => f.geometry?.coordinates?.length >= 2)
+    .map(f => ({ props: f.properties, lng: f.geometry.coordinates[0], lat: f.geometry.coordinates[1] }))
+    .filter(f => f.lat !== 0 && f.lng !== 0);
 }
 
-// POST-PRIMARY DATA LOADING — tries layers 6, 0, 1, 2 in sequence
 function setMsg(html) {
   const el = document.getElementById('loading-text');
   el.innerHTML = html;
-  document.querySelector('.spinner').style.display =
-    html.includes('strong') ? 'none' : '';
+  document.querySelector('.spinner').style.display = html.includes('strong') ? 'none' : '';
 }
 
 async function tryLayer(layer) {
@@ -481,29 +536,39 @@ async function tryLayer(layer) {
 }
 
 (async () => {
+  // Fire primary load immediately so it runs in parallel with post-primary fallback loop
+  const primaryPromise = loadPrimarySchools().catch(e => {
+    console.warn('Primary schools load failed:', e.message);
+  });
+
+  let postPrimaryOk = false;
   for (const layer of [6, 0, 1, 2, 3]) {
     try {
-      setMsg(`Checking layer ${layer}…`);
       const features = await tryLayer(layer);
       allSchools = features
         .filter(f => f.geometry?.coordinates?.length >= 2)
-        .map(f => ({
-          props: f.properties,
-          lng: f.geometry.coordinates[0],
-          lat: f.geometry.coordinates[1]
-        }))
+        .map(f => ({ props: f.properties, lng: f.geometry.coordinates[0], lat: f.geometry.coordinates[1] }))
         .filter(f => f.lat !== 0 && f.lng !== 0);
-      render();
-      document.getElementById('loading').classList.add('hidden');
-      return;
+      postPrimaryOk = true;
+      break;
     } catch(e) {
       console.warn(`Layer ${layer}:`, e.message);
     }
   }
-  setMsg(`<strong style="color:#c00">Could not load data.</strong><br><br>
-    This is likely a network restriction in the preview iframe.<br><br>
-    <b>Download the file and open it in your browser</b> — 
-    it will load live from the Dept. of Education ArcGIS service.`);
+
+  await primaryPromise;
+
+  if (!postPrimaryOk) {
+    setMsg(`<strong style="color:#c00">Could not load data.</strong><br><br>
+      This is likely a network restriction in the preview iframe.<br><br>
+      <b>Download the file and open it in your browser</b> —
+      it will load live from the Dept. of Education ArcGIS service.`);
+    return;
+  }
+
+  buildTypeOptions();
+  renderAll();
+  document.getElementById('loading').classList.add('hidden');
 })();
 </script>
 </body>
