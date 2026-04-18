@@ -12,7 +12,7 @@
 :root {
   --boys:   #1a6abf;
   --girls:  #c0147a;
-  --mixed:  #6b7280;
+  --mixed:  #7c35b8;
   --bg:     #f4f5f7;
   --white:  #ffffff;
   --border: #d0d4dc;
@@ -96,6 +96,7 @@ html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; ba
 .filter-btn.on-all   { border-color: #555;         color: var(--text);  background: #f0f0f0; }
 .filter-btn.on-boys  { border-color: var(--boys);  color: var(--boys);  background: #eef4ff; }
 .filter-btn.on-girls { border-color: var(--girls); color: var(--girls); background: #fceef7; }
+.filter-btn.on-mixed { border-color: var(--mixed);  color: var(--mixed); background: #f3eaff; }
 .filter-btn.on-fee   { border-color: #7c3aed;      color: #7c3aed;      background: #f3eeff; }
 .filter-btn.on-free  { border-color: #059669;      color: #059669;      background: #ecfdf5; }
 
@@ -213,15 +214,15 @@ a.vlink:hover { text-decoration: underline; }
   <div id="header">
     <h1>Irish Schools Map</h1>
     <nav class="map-nav">
-      <a href="postprimary_schools_map.html" class="active">Post-primary</a>
       <a href="primary_schools_map.html">Primary</a>
+      <a href="postprimary_schools_map.html" class="active">Post-primary</a>
     </nav>
-    <span class="source">Dept. of Education</span>
     <div id="controls">
       <!-- Gender -->
       <button class="filter-btn on-all" id="btn-all"   onclick="setGender('all')"><span class="dot" style="background:#555"></span>All</button>
       <button class="filter-btn"        id="btn-boys"  onclick="setGender('boys')"><span class="dot" style="background:var(--boys)"></span>Boys</button>
       <button class="filter-btn"        id="btn-girls" onclick="setGender('girls')"><span class="dot" style="background:var(--girls)"></span>Girls</button>
+      <button class="filter-btn"        id="btn-mixed" onclick="setGender('mixed')"><span class="dot" style="background:var(--mixed)"></span>Mixed</button>
       <div class="divider"></div>
       <!-- Fee paying -->
       <button class="filter-btn on-all" id="btn-fee-all"  onclick="setFee('all')"><span class="dot" style="background:#555"></span>All</button>
@@ -281,7 +282,7 @@ function getGender(p) {
 function genderColors(gender) {
   if (gender === 'boys')  return { fill: '#1a6abf', stroke: '#0a3d7a' };
   if (gender === 'girls') return { fill: '#c0147a', stroke: '#800050' };
-  return { fill: '#6b7280', stroke: '#374151' };
+  return { fill: '#7c35b8', stroke: '#4e1a78' };
 }
 
 function circleOpts(gender) {
@@ -389,6 +390,7 @@ function setGender(g) {
   document.getElementById('btn-all').className   = 'filter-btn' + (g === 'all'   ? ' on-all'   : '');
   document.getElementById('btn-boys').className  = 'filter-btn' + (g === 'boys'  ? ' on-boys'  : '');
   document.getElementById('btn-girls').className = 'filter-btn' + (g === 'girls' ? ' on-girls' : '');
+  document.getElementById('btn-mixed').className = 'filter-btn' + (g === 'mixed' ? ' on-mixed' : '');
   render();
 }
 

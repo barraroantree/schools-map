@@ -12,7 +12,7 @@
 :root {
   --boys:   #1a6abf;
   --girls:  #c0147a;
-  --mixed:  #6b7280;
+  --mixed:  #7c35b8;
   --bg:     #f4f5f7;
   --white:  #ffffff;
   --border: #d0d4dc;
@@ -96,8 +96,7 @@ html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; ba
 .filter-btn.on-all   { border-color: #555;         color: var(--text);  background: #f0f0f0; }
 .filter-btn.on-boys  { border-color: var(--boys);  color: var(--boys);  background: #eef4ff; }
 .filter-btn.on-girls { border-color: var(--girls); color: var(--girls); background: #fceef7; }
-.filter-btn.on-fee   { border-color: #7c3aed;      color: #7c3aed;      background: #f3eeff; }
-.filter-btn.on-free  { border-color: #059669;      color: #059669;      background: #ecfdf5; }
+.filter-btn.on-mixed { border-color: var(--mixed);  color: var(--mixed); background: #f3eaff; }
 
 #controls .divider { width: 1px; height: 18px; background: var(--border); margin: 0 2px; }
 
@@ -213,24 +212,18 @@ a.vlink:hover { text-decoration: underline; }
   <div id="header">
     <h1>Irish Schools Map</h1>
     <nav class="map-nav">
-      <a href="postprimary_schools_map.html">Post-primary</a>
       <a href="primary_schools_map.html" class="active">Primary</a>
+      <a href="postprimary_schools_map.html">Post-primary</a>
     </nav>
-    <span class="source">Dept. of Education</span>
     <div id="controls">
       <!-- Gender -->
       <button class="filter-btn on-all" id="btn-all"   onclick="setGender('all')"><span class="dot" style="background:#555"></span>All</button>
       <button class="filter-btn"        id="btn-boys"  onclick="setGender('boys')"><span class="dot" style="background:var(--boys)"></span>Boys</button>
       <button class="filter-btn"        id="btn-girls" onclick="setGender('girls')"><span class="dot" style="background:var(--girls)"></span>Girls</button>
+      <button class="filter-btn"        id="btn-mixed" onclick="setGender('mixed')"><span class="dot" style="background:var(--mixed)"></span>Mixed</button>
       <div class="divider"></div>
-      <!-- Fee paying -->
-      <button class="filter-btn on-all" id="btn-fee-all" onclick="setFee('all')"><span class="dot" style="background:#555"></span>All</button>
-      <button class="filter-btn"        id="btn-fee-yes" onclick="setFee('yes')">Fee paying</button>
-      <button class="filter-btn"        id="btn-fee-no"  onclick="setFee('no')">Free</button>
-      <div class="divider"></div>
-      <!-- Type & Ethos dropdowns -->
-      <select id="type-select"  class="filter-select" onchange="setType(this.value)"><option value="all">All types</option></select>
-      <select id="ethos-select" class="filter-select" onchange="setEthos(this.value)"><option value="all">All ethos</option></select>
+      <!-- Irish class -->
+      <select id="irish-select" class="filter-select" onchange="setIrish(this.value)"><option value="all">All Irish class.</option></select>
       <div id="stats">loading…</div>
     </div>
   </div>
@@ -267,7 +260,7 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 // STATE
 let schools = [];
-let genderFilter = 'all', feeFilter = 'all', typeFilter = 'all', ethosFilter = 'all', searchTerm = '';
+let genderFilter = 'all', irishFilter = 'all', searchTerm = '';
 const group = L.layerGroup().addTo(map);
 
 // GENDER
@@ -275,13 +268,19 @@ function getGender(p) {
   const g = (p.School_Gender || p.Gender || '').toLowerCase();
   if (g.includes('girl') || g.includes('female')) return 'girls';
   if (g.includes('boy')  || g.includes('male'))   return 'boys';
+  // Primary data has no gender field — infer from enrollment counts
+  const f = Number(p.Female), m = Number(p.Male);
+  if (!isNaN(f) && !isNaN(m) && (f > 0 || m > 0)) {
+    if (f > 0 && m === 0) return 'girls';
+    if (m > 0 && f === 0) return 'boys';
+  }
   return 'mixed';
 }
 
 function genderColors(gender) {
   if (gender === 'boys')  return { fill: '#1a6abf', stroke: '#0a3d7a' };
   if (gender === 'girls') return { fill: '#c0147a', stroke: '#800050' };
-  return { fill: '#6b7280', stroke: '#374151' };
+  return { fill: '#7c35b8', stroke: '#4e1a78' };
 }
 
 function circleOpts(gender) {
@@ -290,9 +289,7 @@ function circleOpts(gender) {
 }
 
 // FIELD GETTERS
-function getType(p)     { return (p.School_Type || p.Type_Description || '').trim(); }
-function getEthos(p)    { return (p.Ethos_Description || p.Ethos_Religion || '').trim(); }
-function isFeePaying(p) { return p.Fee_Paying_School__Y_N_ === 'Y'; }
+function getIrish(p) { return (p.Irish_Classification_Descriptio || '').trim(); }
 
 // POPUP
 function getVal(p, ...keys) {
@@ -337,29 +334,19 @@ function buildPopup(p) {
 
 // DROPDOWNS
 function buildDropdowns() {
-  const types = new Set(), ethoses = new Set();
+  const irishVals = new Set();
   schools.forEach(({props: p}) => {
-    const t = getType(p);  if (t)  types.add(t);
-    const e = getEthos(p); if (e) ethoses.add(e);
+    const v = getIrish(p); if (v) irishVals.add(v);
   });
-  function populate(id, values) {
-    const sel = document.getElementById(id);
-    const cur = sel.value;
-    const opt = sel.options[0].outerHTML;
-    sel.innerHTML = opt + [...values].sort().map(v => `<option value="${v}">${v}</option>`).join('');
-    if ([...values].includes(cur)) sel.value = cur;
-  }
-  populate('type-select',  types);
-  populate('ethos-select', ethoses);
+  const sel = document.getElementById('irish-select');
+  const opt = sel.options[0].outerHTML;
+  sel.innerHTML = opt + [...irishVals].sort().map(v => `<option value="${v}">${v}</option>`).join('');
 }
 
 // FILTER & RENDER
 function passesFilter(p) {
   if (genderFilter !== 'all' && getGender(p) !== genderFilter) return false;
-  if (feeFilter === 'yes' && !isFeePaying(p)) return false;
-  if (feeFilter === 'no'  &&  isFeePaying(p)) return false;
-  if (typeFilter  !== 'all' && getType(p)  !== typeFilter)  return false;
-  if (ethosFilter !== 'all' && getEthos(p) !== ethosFilter) return false;
+  if (irishFilter  !== 'all' && getIrish(p)  !== irishFilter)  return false;
   return true;
 }
 
@@ -384,19 +371,11 @@ function setGender(g) {
   document.getElementById('btn-all').className   = 'filter-btn' + (g === 'all'   ? ' on-all'   : '');
   document.getElementById('btn-boys').className  = 'filter-btn' + (g === 'boys'  ? ' on-boys'  : '');
   document.getElementById('btn-girls').className = 'filter-btn' + (g === 'girls' ? ' on-girls' : '');
+  document.getElementById('btn-mixed').className = 'filter-btn' + (g === 'mixed' ? ' on-mixed' : '');
   render();
 }
 
-function setFee(f) {
-  feeFilter = f;
-  document.getElementById('btn-fee-all').className = 'filter-btn' + (f === 'all' ? ' on-all'  : '');
-  document.getElementById('btn-fee-yes').className = 'filter-btn' + (f === 'yes' ? ' on-fee'  : '');
-  document.getElementById('btn-fee-no').className  = 'filter-btn' + (f === 'no'  ? ' on-free' : '');
-  render();
-}
-
-function setType(t)      { typeFilter  = t; render(); }
-function setEthos(e)     { ethosFilter = e; render(); }
+function setIrish(v)     { irishFilter = v; render(); }
 function filterByName(v) { searchTerm  = v.trim().toLowerCase(); render(); }
 
 // DATA LOADING
