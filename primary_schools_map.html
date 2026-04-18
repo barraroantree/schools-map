@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Post-Primary Schools — Ireland</title>
+<title>Primary Schools — Ireland</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
@@ -97,8 +97,6 @@ html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; ba
 .filter-btn.on-boys  { border-color: var(--boys);  color: var(--boys);  background: #eef4ff; }
 .filter-btn.on-girls { border-color: var(--girls); color: var(--girls); background: #fceef7; }
 .filter-btn.on-mixed { border-color: var(--mixed);  color: var(--mixed); background: #f3eaff; }
-.filter-btn.on-fee   { border-color: #7c3aed;      color: #7c3aed;      background: #f3eeff; }
-.filter-btn.on-free  { border-color: #059669;      color: #059669;      background: #ecfdf5; }
 
 #controls .divider { width: 1px; height: 18px; background: var(--border); margin: 0 2px; }
 
@@ -214,8 +212,8 @@ a.vlink:hover { text-decoration: underline; }
   <div id="header">
     <h1>Irish Schools Map</h1>
     <nav class="map-nav">
-      <a href="primary_schools_map.html">Primary</a>
-      <a href="postprimary_schools_map.html" class="active">Post-primary</a>
+      <a href="primary_schools_map.html" class="active">Primary</a>
+      <a href="postprimary_schools_map.html">Post-primary</a>
     </nav>
     <div id="controls">
       <!-- Gender -->
@@ -224,14 +222,8 @@ a.vlink:hover { text-decoration: underline; }
       <button class="filter-btn"        id="btn-girls" onclick="setGender('girls')"><span class="dot" style="background:var(--girls)"></span>Girls</button>
       <button class="filter-btn"        id="btn-mixed" onclick="setGender('mixed')"><span class="dot" style="background:var(--mixed)"></span>Mixed</button>
       <div class="divider"></div>
-      <!-- Fee paying -->
-      <button class="filter-btn on-all" id="btn-fee-all"  onclick="setFee('all')"><span class="dot" style="background:#555"></span>All</button>
-      <button class="filter-btn"        id="btn-fee-yes"  onclick="setFee('yes')">Fee paying</button>
-      <button class="filter-btn"        id="btn-fee-no"   onclick="setFee('no')">Free</button>
-      <div class="divider"></div>
-      <!-- Type & Ethos dropdowns -->
-      <select id="type-select"  class="filter-select" onchange="setType(this.value)"><option value="all">All types</option></select>
-      <select id="ethos-select" class="filter-select" onchange="setEthos(this.value)"><option value="all">All ethos</option></select>
+      <!-- Irish class -->
+      <select id="irish-select" class="filter-select" onchange="setIrish(this.value)"><option value="all">All Irish class.</option></select>
       <div id="stats">loading…</div>
     </div>
   </div>
@@ -268,14 +260,20 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 // STATE
 let schools = [];
-let genderFilter = 'all', feeFilter = 'all', typeFilter = 'all', ethosFilter = 'all', searchTerm = '';
+let genderFilter = 'all', irishFilter = 'all', searchTerm = '';
 const group = L.layerGroup().addTo(map);
 
 // GENDER
 function getGender(p) {
-  const g = (p.School_Gender___Post_Primary || p.Gender || '').toLowerCase();
+  const g = (p.School_Gender || p.Gender || '').toLowerCase();
   if (g.includes('girl') || g.includes('female')) return 'girls';
   if (g.includes('boy')  || g.includes('male'))   return 'boys';
+  // Primary data has no gender field — infer from enrollment counts
+  const f = Number(p.Female), m = Number(p.Male);
+  if (!isNaN(f) && !isNaN(m) && (f > 0 || m > 0)) {
+    if (f > 0 && m === 0) return 'girls';
+    if (m > 0 && f === 0) return 'boys';
+  }
   return 'mixed';
 }
 
@@ -291,9 +289,7 @@ function circleOpts(gender) {
 }
 
 // FIELD GETTERS
-function getType(p)  { return (p.Post_Primary_School_Type || p.School_Type || '').trim(); }
-function getEthos(p) { return (p.Ethos_Religion || '').trim(); }
-function isFeePaying(p) { return p.Fee_Paying_School__Y_N_ === 'Y'; }
+function getIrish(p) { return (p.Irish_Classification_Descriptio || '').trim(); }
 
 // POPUP
 function getVal(p, ...keys) {
@@ -303,32 +299,27 @@ function getVal(p, ...keys) {
   }
   return null;
 }
-function row(lbl, val)          { return `<div class="popup-row"><span class="lbl">${lbl}</span><span class="val">${val}</span></div>`; }
-function linkRow(lbl, href, txt){ return `<div class="popup-row"><span class="lbl">${lbl}</span><a class="vlink" href="${href}" target="_blank">${txt}</a></div>`; }
+function row(lbl, val)           { return `<div class="popup-row"><span class="lbl">${lbl}</span><span class="val">${val}</span></div>`; }
+function linkRow(lbl, href, txt) { return `<div class="popup-row"><span class="lbl">${lbl}</span><a class="vlink" href="${href}" target="_blank">${txt}</a></div>`; }
 
-const PP_LABELS = {
+const PRI_LABELS = {
   Roll_Number:                     'Roll No.',
-  Phone:                           'Phone',
-  Email:                           'Email',
-  Post_Primary_School_Type:        'Type',
-  Ethos_Religion:                  'Ethos',
-  School_Gender___Post_Primary:    'Gender',
-  Irish_Classification___Post_Pri: 'Irish class.',
-  Pupil_Attendance_Type:           'Attendance',
+  Ethos_Description:               'Ethos',
+  School_Gender:                   'Gender',
+  Irish_Classification_Descriptio: 'Irish class.',
   Fee_Paying_School__Y_N_:         'Fee paying',
-  Principal_Name:                  'Principal',
 };
 
 function buildPopup(p) {
-  const name = p.Official_School_Name || p.School_Name || p.Official_Name || p.Name || 'Unknown School';
+  const name = p.Official_Name || p.School_Name || p.Name || 'Unknown School';
   let rows = row('DEIS', p.DEIS__Y_N_ === 'Y' ? 'Yes' : 'No');
-  Object.entries(PP_LABELS).forEach(([k, lbl]) => {
+  Object.entries(PRI_LABELS).forEach(([k, lbl]) => {
     const v = p[k];
     if (v == null || v === '' || v === 'Null' || v === 'null') return;
-    if (k === 'Email') rows += linkRow(lbl, `mailto:${v}`, v);
-    else rows += row(lbl, v);
+    rows += row(lbl, v);
   });
-  const f = getVal(p, 'FEMALE'), m = getVal(p, 'MALE'), tot = getVal(p, 'Total');
+  if (p.Gaeltacht_Indicator__Y_N_ === 'Y') rows += row('Gaeltacht', 'Yes');
+  const f = getVal(p, 'Female'), m = getVal(p, 'Male'), tot = getVal(p, 'Total');
   if (f != null && m != null) rows += row('Students', `${f} (G) · ${m} (B)`);
   else if (f != null)         rows += row('Students', `${f} (G)`);
   else if (m != null)         rows += row('Students', `${m} (B)`);
@@ -338,34 +329,24 @@ function buildPopup(p) {
       `https://www.gov.ie/en/school-reports/?roll_number=${encodeURIComponent(p.Roll_Number)}`,
       'View reports');
   }
-  return `<div class="popup-head"><div class="popup-name">${name}</div><div class="popup-sub">Post-primary</div></div><div class="popup-body">${rows}</div>`;
+  return `<div class="popup-head"><div class="popup-name">${name}</div><div class="popup-sub">Primary</div></div><div class="popup-body">${rows}</div>`;
 }
 
 // DROPDOWNS
 function buildDropdowns() {
-  const types  = new Set(), ethoses = new Set();
+  const irishVals = new Set();
   schools.forEach(({props: p}) => {
-    const t = getType(p);  if (t)  types.add(t);
-    const e = getEthos(p); if (e) ethoses.add(e);
+    const v = getIrish(p); if (v) irishVals.add(v);
   });
-  function populate(id, values) {
-    const sel = document.getElementById(id);
-    const cur = sel.value;
-    const opt = sel.options[0].outerHTML;
-    sel.innerHTML = opt + [...values].sort().map(v => `<option value="${v}">${v}</option>`).join('');
-    if ([...values].includes(cur)) sel.value = cur;
-  }
-  populate('type-select',  types);
-  populate('ethos-select', ethoses);
+  const sel = document.getElementById('irish-select');
+  const opt = sel.options[0].outerHTML;
+  sel.innerHTML = opt + [...irishVals].sort().map(v => `<option value="${v}">${v}</option>`).join('');
 }
 
 // FILTER & RENDER
 function passesFilter(p) {
   if (genderFilter !== 'all' && getGender(p) !== genderFilter) return false;
-  if (feeFilter === 'yes' && !isFeePaying(p)) return false;
-  if (feeFilter === 'no'  &&  isFeePaying(p)) return false;
-  if (typeFilter  !== 'all' && getType(p)  !== typeFilter)  return false;
-  if (ethosFilter !== 'all' && getEthos(p) !== ethosFilter) return false;
+  if (irishFilter  !== 'all' && getIrish(p)  !== irishFilter)  return false;
   return true;
 }
 
@@ -373,7 +354,7 @@ function render() {
   group.clearLayers();
   let n = 0;
   schools.forEach(({props: p, lat, lng}) => {
-    const name = (p.Official_School_Name || p.School_Name || p.Official_Name || '').toLowerCase();
+    const name = (p.Official_Name || p.School_Name || '').toLowerCase();
     if (searchTerm && !name.includes(searchTerm)) return;
     if (!passesFilter(p)) return;
     L.circleMarker([lat, lng], circleOpts(getGender(p)))
@@ -394,16 +375,7 @@ function setGender(g) {
   render();
 }
 
-function setFee(f) {
-  feeFilter = f;
-  document.getElementById('btn-fee-all').className = 'filter-btn' + (f === 'all' ? ' on-all'  : '');
-  document.getElementById('btn-fee-yes').className = 'filter-btn' + (f === 'yes' ? ' on-fee'  : '');
-  document.getElementById('btn-fee-no').className  = 'filter-btn' + (f === 'no'  ? ' on-free' : '');
-  render();
-}
-
-function setType(t)      { typeFilter  = t; render(); }
-function setEthos(e)     { ethosFilter = e; render(); }
+function setIrish(v)     { irishFilter = v; render(); }
 function filterByName(v) { searchTerm  = v.trim().toLowerCase(); render(); }
 
 // DATA LOADING
@@ -412,36 +384,29 @@ function setMsg(html) {
   document.querySelector('.spinner').style.display = html.includes('strong') ? 'none' : '';
 }
 
-async function tryLayer(layer) {
-  const url = `https://services6.arcgis.com/MmUrOQU5v1he9gfS/arcgis/rest/services/Post_Primary_Schools_Ireland/FeatureServer/${layer}/query?where=1%3D1&outFields=*&outSR=4326&f=geojson&resultRecordCount=2000`;
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  const d = await r.json();
-  if (d.error) throw new Error(d.error.message);
-  if (!d.features?.length) throw new Error('no features');
-  return d.features;
-}
-
 (async () => {
-  for (const layer of [6, 0, 1, 2, 3]) {
-    try {
-      const features = await tryLayer(layer);
-      schools = features
-        .filter(f => f.geometry?.coordinates?.length >= 2)
-        .map(f => ({ props: f.properties, lng: f.geometry.coordinates[0], lat: f.geometry.coordinates[1] }))
-        .filter(f => f.lat !== 0 && f.lng !== 0);
-      buildDropdowns();
-      render();
-      document.getElementById('loading').classList.add('hidden');
-      return;
-    } catch(e) {
-      console.warn(`Layer ${layer}:`, e.message);
-    }
+  try {
+    const url = 'https://services6.arcgis.com/MmUrOQU5v1he9gfS/arcgis/rest/services/' +
+      'MainstreamPrimarySchoolsIreland/FeatureServer/0' +
+      '/query?where=1%3D1&outFields=*&outSR=4326&f=geojson&resultRecordCount=5000';
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d = await r.json();
+    if (d.error) throw new Error(d.error.message);
+    schools = (d.features || [])
+      .filter(f => f.geometry?.coordinates?.length >= 2)
+      .map(f => ({ props: f.properties, lng: f.geometry.coordinates[0], lat: f.geometry.coordinates[1] }))
+      .filter(f => f.lat !== 0 && f.lng !== 0);
+    buildDropdowns();
+    render();
+    document.getElementById('loading').classList.add('hidden');
+  } catch(e) {
+    console.warn('Primary schools load failed:', e.message);
+    setMsg(`<strong style="color:#c00">Could not load data.</strong><br><br>
+      This is likely a network restriction in the preview iframe.<br><br>
+      <b>Download the file and open it in your browser</b> —
+      it will load live from the Dept. of Education ArcGIS service.`);
   }
-  setMsg(`<strong style="color:#c00">Could not load data.</strong><br><br>
-    This is likely a network restriction in the preview iframe.<br><br>
-    <b>Download the file and open it in your browser</b> —
-    it will load live from the Dept. of Education ArcGIS service.`);
 })();
 </script>
 </body>
