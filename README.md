@@ -1,15 +1,18 @@
-# Irish Schools Map
+# Irish Schools & Childcare Map
 
-An interactive map of Irish primary and post-primary schools, built from the Department of Education's ArcGIS REST service. Pan and zoom around Ireland, filter by gender, ethos, and more, and search by school name. Click any marker to see school details.
+An interactive map of Irish primary schools, post-primary schools, and childcare facilities. Pan and zoom around Ireland, filter by various criteria, and search by name. Click any marker to see details.
 
-## Live map
+## Live maps
 
-View the deployed map on GitHub Pages:  
-https://barraroantree.github.io/schools-map/postprimary_schools_map.html
+View the deployed maps on GitHub Pages:
+
+- [Primary schools](https://barraroantree.github.io/schools-map/primary_schools_map.html)
+- [Post-primary schools](https://barraroantree.github.io/schools-map/postprimary_schools_map.html)
+- [Childcare facilities](https://barraroantree.github.io/schools-map/childcare_map.html)
 
 ## Usage
 
-Open `primary_schools_map.html` or `postprimary_schools_map.html` directly in a browser (Chrome, Firefox, Safari). No build step or server needed — each file fetches live data from the Department of Education on load.
+Open any HTML file directly in a browser (Chrome, Firefox, Safari). No build step or server needed — each file fetches live data on load.
 
 > **Note:** The maps will not load inside a sandboxed iframe (e.g. some preview panels). Open the files locally in a full browser window.
 
@@ -19,6 +22,7 @@ Open `primary_schools_map.html` or `postprimary_schools_map.html` directly in a 
 |------|-------------|
 | `primary_schools_map.html` | ~3,300 mainstream primary schools |
 | `postprimary_schools_map.html` | ~750 post-primary schools |
+| `childcare_map.html` | Childcare facilities from Pobal |
 
 ## Features
 
@@ -35,9 +39,16 @@ Open `primary_schools_map.html` or `postprimary_schools_map.html` directly in a 
 - **Name search** — real-time substring search
 - **School popup** — roll number, contact info, school type, ethos, gender, Irish classification, attendance type, fee-paying status, principal, student numbers, and link to inspection reports
 
+### Childcare
+- **Marker colour** — teal for community/voluntary, amber for private, grey for other
+- **Programme filters** — toggle ECCE, CCSP, and NCS to show only participating facilities
+- **Organisation type dropdown** — populated dynamically from the data
+- **Name search** — real-time substring search
+- **Facility popup** — eircode, phone, email, organisation type, and ECCE/CCSP/NCS participation
+
 ## Data sources
 
-Live GeoJSON from the Department of Education ArcGIS FeatureServer:
+**Schools** — live GeoJSON from the Department of Education ArcGIS FeatureServer:
 
 ```
 Primary:      MainstreamPrimarySchoolsIreland/FeatureServer/0
@@ -45,6 +56,14 @@ Post-primary: Post_Primary_Schools_Ireland/FeatureServer/6
 ```
 
 (Both under `https://services6.arcgis.com/MmUrOQU5v1he9gfS/arcgis/rest/services/`)
+
+**Childcare** — live GeoJSON from the Pobal ArcGIS FeatureServer:
+
+```
+Childcare_Facilities_NEW/FeatureServer/2
+```
+
+(Under `https://services8.arcgis.com/AF8wcIoCeDo33LsM/arcgis/rest/services/`)
 
 ## Libraries
 

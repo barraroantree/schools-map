@@ -3,22 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Primary Schools — Ireland</title>
+<title>Childcare Facilities — Ireland</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --boys:   #1a6abf;
-  --girls:  #c0147a;
-  --mixed:  #7c35b8;
-  --bg:     #f4f5f7;
-  --white:  #ffffff;
-  --border: #d0d4dc;
-  --text:   #1a1e2a;
-  --muted:  #6b7280;
-  --accent: #1a6abf;
+  --bg:        #f4f5f7;
+  --white:     #ffffff;
+  --border:    #d0d4dc;
+  --text:      #1a1e2a;
+  --muted:     #6b7280;
+  --accent:    #0e7c6b;
+  --community: #0e7c6b;
+  --private:   #c2690a;
+  --other:     #6b7280;
 }
 
 html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); }
@@ -92,11 +92,7 @@ html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; ba
   transition: all 0.15s;
   white-space: nowrap;
 }
-.filter-btn .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.filter-btn.on-all   { border-color: #555;         color: var(--text);  background: #f0f0f0; }
-.filter-btn.on-boys  { border-color: var(--boys);  color: var(--boys);  background: #eef4ff; }
-.filter-btn.on-girls { border-color: var(--girls); color: var(--girls); background: #fceef7; }
-.filter-btn.on-mixed { border-color: var(--mixed);  color: var(--mixed); background: #f3eaff; }
+.filter-btn.on { border-color: var(--accent); color: var(--accent); background: #e6f4f1; }
 
 #controls .divider { width: 1px; height: 18px; background: var(--border); margin: 0 2px; }
 
@@ -169,7 +165,7 @@ html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; ba
   box-shadow: 0 2px 12px rgba(0,0,0,0.15);
   transition: border-color 0.15s, box-shadow 0.15s;
 }
-#search:focus { border-color: var(--accent); box-shadow: 0 2px 16px rgba(26,106,191,0.2); }
+#search:focus { border-color: var(--accent); box-shadow: 0 2px 16px rgba(14,124,107,0.2); }
 #search::placeholder { color: var(--muted); }
 #search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 13px; pointer-events: none; }
 
@@ -195,10 +191,13 @@ html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; ba
 .popup-body { padding: 10px 14px 14px; background: var(--white); }
 .popup-row  { display: flex; gap: 8px; padding: 3px 0; font-size: 12px; border-bottom: 1px solid #f0f0f0; }
 .popup-row:last-child { border-bottom: none; }
-.popup-row .lbl { color: var(--muted); flex-shrink: 0; width: 80px; }
+.popup-row .lbl { color: var(--muted); flex-shrink: 0; width: 90px; }
 .popup-row .val { color: var(--text); word-break: break-word; }
 a.vlink { color: var(--accent); text-decoration: none; }
 a.vlink:hover { text-decoration: underline; }
+.badge { display: inline-block; padding: 1px 6px; border-radius: 10px; font-size: 10px; font-weight: 600; margin-right: 3px; }
+.badge-yes { background: #d1fae5; color: #065f46; }
+.badge-no  { background: #f3f4f6; color: var(--muted); }
 
 @media (max-width: 560px) {
   #header h1 { font-size: 12px; }
@@ -212,19 +211,20 @@ a.vlink:hover { text-decoration: underline; }
   <div id="header">
     <h1>Irish Schools Map</h1>
     <nav class="map-nav">
-      <a href="primary_schools_map.html" class="active">Primary</a>
+      <a href="primary_schools_map.html">Primary</a>
       <a href="postprimary_schools_map.html">Post-primary</a>
-      <a href="childcare_map.html">Childcare</a>
+      <a href="childcare_map.html" class="active">Childcare</a>
     </nav>
     <div id="controls">
-      <!-- Gender -->
-      <button class="filter-btn on-all" id="btn-all"   onclick="setGender('all')"><span class="dot" style="background:#555"></span>All</button>
-      <button class="filter-btn"        id="btn-boys"  onclick="setGender('boys')"><span class="dot" style="background:var(--boys)"></span>Boys</button>
-      <button class="filter-btn"        id="btn-girls" onclick="setGender('girls')"><span class="dot" style="background:var(--girls)"></span>Girls</button>
-      <button class="filter-btn"        id="btn-mixed" onclick="setGender('mixed')"><span class="dot" style="background:var(--mixed)"></span>Mixed</button>
+      <!-- Programme filters -->
+      <button class="filter-btn" id="btn-ecce"  onclick="toggleProg('ecce')">ECCE</button>
+      <button class="filter-btn" id="btn-ccsp"  onclick="toggleProg('ccsp')">CCSP</button>
+      <button class="filter-btn" id="btn-ncs"   onclick="toggleProg('ncs')">NCS</button>
       <div class="divider"></div>
-      <!-- Irish class -->
-      <select id="irish-select" class="filter-select" onchange="setIrish(this.value)"><option value="all">All Irish class.</option></select>
+      <!-- Org type -->
+      <select id="orgtype-select" class="filter-select" onchange="setOrgType(this.value)">
+        <option value="all">All org types</option>
+      </select>
       <div id="stats">loading…</div>
     </div>
   </div>
@@ -233,21 +233,21 @@ a.vlink:hover { text-decoration: underline; }
     <div id="map"></div>
 
     <div id="legend">
-      <div class="leg-row"><div class="leg-dot" style="background:var(--boys)"></div> Boys</div>
-      <div class="leg-row"><div class="leg-dot" style="background:var(--girls)"></div> Girls</div>
-      <div class="leg-row"><div class="leg-dot" style="background:var(--mixed)"></div> Mixed</div>
+      <div class="leg-row"><div class="leg-dot" style="background:var(--community)"></div> Community / Voluntary</div>
+      <div class="leg-row"><div class="leg-dot" style="background:var(--private)"></div> Private</div>
+      <div class="leg-row"><div class="leg-dot" style="background:var(--other)"></div> Other / Unknown</div>
     </div>
 
     <div id="search-wrap">
       <div id="search-inner">
         <span id="search-icon">🔍</span>
-        <input id="search" type="search" placeholder="Search school name…" oninput="filterByName(this.value)">
+        <input id="search" type="search" placeholder="Search facility name…" oninput="filterByName(this.value)">
       </div>
     </div>
 
     <div id="loading">
       <div class="spinner"></div>
-      <div id="loading-text">Loading schools data…</div>
+      <div id="loading-text">Loading childcare data…</div>
     </div>
   </div>
 </div>
@@ -260,124 +260,106 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 // STATE
-let schools = [];
-let genderFilter = 'all', irishFilter = 'all', searchTerm = '';
+let facilities = [];
+let progFilters = { ecce: false, ccsp: false, ncs: false };
+let orgTypeFilter = 'all';
+let searchTerm = '';
 const group = L.layerGroup().addTo(map);
 
-// GENDER
-function getGender(p) {
-  const g = (p.School_Gender || p.Gender || '').toLowerCase();
-  if (g.includes('girl') || g.includes('female')) return 'girls';
-  if (g.includes('boy')  || g.includes('male'))   return 'boys';
-  // Primary data has no gender field — infer from enrollment counts
-  const f = Number(p.Female), m = Number(p.Male);
-  if (!isNaN(f) && !isNaN(m) && (f > 0 || m > 0)) {
-    if (f > 0 && m === 0) return 'girls';
-    if (m > 0 && f === 0) return 'boys';
-  }
-  return 'mixed';
+function getOrgClass(orgType) {
+  const t = (orgType || '').toLowerCase();
+  if (t.includes('community') || t.includes('voluntary') || t.includes('co-op') || t.includes('coop')) return 'community';
+  if (t.includes('private')) return 'private';
+  return 'other';
 }
 
-function genderColors(gender) {
-  if (gender === 'boys')  return { fill: '#1a6abf', stroke: '#0a3d7a' };
-  if (gender === 'girls') return { fill: '#c0147a', stroke: '#800050' };
-  return { fill: '#7c35b8', stroke: '#4e1a78' };
-}
+const ORG_COLORS = {
+  community: { fill: '#0e7c6b', stroke: '#065f46' },
+  private:   { fill: '#c2690a', stroke: '#7c3d00' },
+  other:     { fill: '#6b7280', stroke: '#374151' },
+};
 
-function circleOpts(gender) {
-  const c = genderColors(gender);
+function markerOpts(orgType) {
+  const c = ORG_COLORS[getOrgClass(orgType)];
   return { radius: 6, fillColor: c.fill, color: c.stroke, weight: 1, opacity: 1, fillOpacity: 0.82 };
 }
 
-// FIELD GETTERS
-function getIrish(p) { return (p.Irish_Classification_Descriptio || '').trim(); }
-
 // POPUP
-function getVal(p, ...keys) {
-  for (const k of keys) {
-    const v = p[k];
-    if (v != null && v !== '' && v !== 'Null' && v !== 'null') return v;
-  }
+function yn(val) {
+  if (val == null || val === '' || val === 'Null' || val === 'null') return null;
+  const s = String(val).trim().toUpperCase();
+  if (s === 'Y' || s === 'YES' || s === '1' || s === 'TRUE') return true;
+  if (s === 'N' || s === 'NO'  || s === '0' || s === 'FALSE') return false;
   return null;
 }
-function row(lbl, val)           { return `<div class="popup-row"><span class="lbl">${lbl}</span><span class="val">${val}</span></div>`; }
-function linkRow(lbl, href, txt) { return `<div class="popup-row"><span class="lbl">${lbl}</span><a class="vlink" href="${href}" target="_blank">${txt}</a></div>`; }
 
-const PRI_LABELS = {
-  Roll_Number:                     'Roll No.',
-  Ethos_Description:               'Ethos',
-  School_Gender:                   'Gender',
-  Irish_Classification_Descriptio: 'Irish class.',
-  Fee_Paying_School__Y_N_:         'Fee paying',
-};
+function badge(val) {
+  const b = yn(val);
+  if (b === null) return '';
+  return b ? '<span class="badge badge-yes">Yes</span>' : '<span class="badge badge-no">No</span>';
+}
+
+function row(lbl, val) { return `<div class="popup-row"><span class="lbl">${lbl}</span><span class="val">${val}</span></div>`; }
 
 function buildPopup(p) {
-  const name = p.Official_Name || p.School_Name || p.Name || 'Unknown School';
-  let rows = row('DEIS', p.DEIS__Y_N_ === 'Y' ? 'Yes' : 'No');
-  Object.entries(PRI_LABELS).forEach(([k, lbl]) => {
-    const v = p[k];
-    if (v == null || v === '' || v === 'Null' || v === 'null') return;
-    rows += row(lbl, v);
-  });
-  if (p.Gaeltacht_Indicator__Y_N_ === 'Y') rows += row('Gaeltacht', 'Yes');
-  const f = getVal(p, 'Female'), m = getVal(p, 'Male'), tot = getVal(p, 'Total');
-  if (f != null && m != null) rows += row('Students', `${f} (G) · ${m} (B)`);
-  else if (f != null)         rows += row('Students', `${f} (G)`);
-  else if (m != null)         rows += row('Students', `${m} (B)`);
-  else if (tot != null)       rows += row('Students', tot);
-  if (p.Roll_Number) {
-    rows += linkRow('Inspections',
-      `https://www.gov.ie/en/school-reports/?roll_number=${encodeURIComponent(p.Roll_Number)}`,
-      'View reports');
-  }
-  return `<div class="popup-head"><div class="popup-name">${name}</div><div class="popup-sub">Primary</div></div><div class="popup-body">${rows}</div>`;
+  const name = p.service_name || p.Name || 'Unknown';
+  const sub = p.organisation_type || '';
+  let rows = '';
+  if (p.eircode)           rows += row('Eircode',   p.eircode);
+  if (p.phone)             rows += row('Phone',      `<a class="vlink" href="tel:${p.phone}">${p.phone}</a>`);
+  if (p.email)             rows += row('Email',      `<a class="vlink" href="mailto:${p.email}">${p.email}</a>`);
+  if (p.organisation_type) rows += row('Org type',   p.organisation_type);
+  const ecce = yn(p.ecce), ccsp = yn(p.ccsp), ncs = yn(p.ncs);
+  if (ecce !== null)       rows += row('ECCE',       badge(p.ecce));
+  if (ccsp !== null)       rows += row('CCSP',       badge(p.ccsp));
+  if (ncs  !== null)       rows += row('NCS',        badge(p.ncs));
+  return `<div class="popup-head"><div class="popup-name">${name}</div><div class="popup-sub">${sub}</div></div><div class="popup-body">${rows}</div>`;
 }
 
 // DROPDOWNS
 function buildDropdowns() {
-  const irishVals = new Set();
-  schools.forEach(({props: p}) => {
-    const v = getIrish(p); if (v) irishVals.add(v);
+  const orgVals = new Set();
+  facilities.forEach(({props: p}) => {
+    const v = (p.organisation_type || '').trim(); if (v) orgVals.add(v);
   });
-  const sel = document.getElementById('irish-select');
+  const sel = document.getElementById('orgtype-select');
   const opt = sel.options[0].outerHTML;
-  sel.innerHTML = opt + [...irishVals].sort().map(v => `<option value="${v}">${v}</option>`).join('');
+  sel.innerHTML = opt + [...orgVals].sort().map(v => `<option value="${v}">${v}</option>`).join('');
 }
 
 // FILTER & RENDER
 function passesFilter(p) {
-  if (genderFilter !== 'all' && getGender(p) !== genderFilter) return false;
-  if (irishFilter  !== 'all' && getIrish(p)  !== irishFilter)  return false;
+  if (orgTypeFilter !== 'all' && (p.organisation_type || '').trim() !== orgTypeFilter) return false;
+  if (progFilters.ecce && yn(p.ecce) !== true) return false;
+  if (progFilters.ccsp && yn(p.ccsp) !== true) return false;
+  if (progFilters.ncs  && yn(p.ncs)  !== true) return false;
   return true;
 }
 
 function render() {
   group.clearLayers();
   let n = 0;
-  schools.forEach(({props: p, lat, lng}) => {
-    const name = (p.Official_Name || p.School_Name || '').toLowerCase();
+  facilities.forEach(({props: p, lat, lng}) => {
+    const name = (p.service_name || '').toLowerCase();
     if (searchTerm && !name.includes(searchTerm)) return;
     if (!passesFilter(p)) return;
-    L.circleMarker([lat, lng], circleOpts(getGender(p)))
+    L.circleMarker([lat, lng], markerOpts(p.organisation_type))
       .bindPopup(buildPopup(p), { maxWidth: 310 })
       .addTo(group);
     n++;
   });
   document.getElementById('stats').textContent =
-    n === schools.length ? `${n} schools` : `${n} of ${schools.length}`;
+    n === facilities.length ? `${n} facilities` : `${n} of ${facilities.length}`;
 }
 
-function setGender(g) {
-  genderFilter = g;
-  document.getElementById('btn-all').className   = 'filter-btn' + (g === 'all'   ? ' on-all'   : '');
-  document.getElementById('btn-boys').className  = 'filter-btn' + (g === 'boys'  ? ' on-boys'  : '');
-  document.getElementById('btn-girls').className = 'filter-btn' + (g === 'girls' ? ' on-girls' : '');
-  document.getElementById('btn-mixed').className = 'filter-btn' + (g === 'mixed' ? ' on-mixed' : '');
+function toggleProg(key) {
+  progFilters[key] = !progFilters[key];
+  document.getElementById(`btn-${key}`).className = 'filter-btn' + (progFilters[key] ? ' on' : '');
   render();
 }
 
-function setIrish(v)     { irishFilter = v; render(); }
-function filterByName(v) { searchTerm  = v.trim().toLowerCase(); render(); }
+function setOrgType(v) { orgTypeFilter = v; render(); }
+function filterByName(v) { searchTerm = v.trim().toLowerCase(); render(); }
 
 // DATA LOADING
 function setMsg(html) {
@@ -387,14 +369,14 @@ function setMsg(html) {
 
 (async () => {
   try {
-    const url = 'https://services6.arcgis.com/MmUrOQU5v1he9gfS/arcgis/rest/services/' +
-      'MainstreamPrimarySchoolsIreland/FeatureServer/0' +
-      '/query?where=1%3D1&outFields=*&outSR=4326&f=geojson&resultRecordCount=5000';
+    const base = 'https://services8.arcgis.com/AF8wcIoCeDo33LsM/arcgis/rest/services/Childcare_Facilities_NEW/FeatureServer/2';
+    const fields = 'service_name,eircode,email,phone,organisation_type,ecce,ccsp,ncs';
+    const url = `${base}/query?where=1%3D1&outFields=${fields}&outSR=4326&f=geojson&resultRecordCount=5000`;
     const r = await fetch(url);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const d = await r.json();
     if (d.error) throw new Error(d.error.message);
-    schools = (d.features || [])
+    facilities = (d.features || [])
       .filter(f => f.geometry?.coordinates?.length >= 2)
       .map(f => ({ props: f.properties, lng: f.geometry.coordinates[0], lat: f.geometry.coordinates[1] }))
       .filter(f => f.lat !== 0 && f.lng !== 0);
@@ -402,11 +384,11 @@ function setMsg(html) {
     render();
     document.getElementById('loading').classList.add('hidden');
   } catch(e) {
-    console.warn('Primary schools load failed:', e.message);
+    console.warn('Childcare facilities load failed:', e.message);
     setMsg(`<strong style="color:#c00">Could not load data.</strong><br><br>
       This is likely a network restriction in the preview iframe.<br><br>
       <b>Download the file and open it in your browser</b> —
-      it will load live from the Dept. of Education ArcGIS service.`);
+      it will load live from the Pobal ArcGIS service.`);
   }
 })();
 </script>
