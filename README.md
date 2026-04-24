@@ -29,6 +29,7 @@ Open any HTML file directly in a browser (Chrome, Firefox, Safari). No build ste
 ### Primary
 - **Gender filter** — All / Boys / Girls / Mixed (inferred from enrollment counts where no gender field is present)
 - **Irish classification filter** — dropdown populated from the `Irish_Classification_Descriptio` field
+- **Ethos filter** — dropdown populated from the `Ethos_Description` field
 - **Name search** — real-time substring search
 - **School popup** — roll number, ethos, gender, Irish classification, fee-paying status, DEIS, Gaeltacht indicator, student numbers, and link to inspection reports
 - **Paginated data load** — fetches all ~3,300 schools across multiple requests (ArcGIS caps responses at 2,000 records)

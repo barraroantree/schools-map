@@ -224,7 +224,9 @@ a.vlink:hover { text-decoration: underline; }
       <button class="filter-btn"        id="btn-mixed" onclick="setGender('mixed')"><span class="dot" style="background:var(--mixed)"></span>Mixed</button>
       <div class="divider"></div>
       <!-- Irish class -->
-      <select id="irish-select" class="filter-select" onchange="setIrish(this.value)"><option value="all">All Irish class.</option></select>
+      <select id="irish-select" class="filter-select" onchange="setIrish(this.value)"><option value="all">All schools</option></select>
+      <!-- Ethos -->
+      <select id="ethos-select" class="filter-select" onchange="setEthos(this.value)"><option value="all">All ethos</option></select>
       <div id="stats">loading…</div>
     </div>
   </div>
@@ -261,7 +263,7 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 // STATE
 let schools = [];
-let genderFilter = 'all', irishFilter = 'all', searchTerm = '';
+let genderFilter = 'all', irishFilter = 'all', ethosFilter = 'all', searchTerm = '';
 const group = L.layerGroup().addTo(map);
 
 // GENDER
@@ -291,6 +293,7 @@ function circleOpts(gender) {
 
 // FIELD GETTERS
 function getIrish(p) { return (p.Irish_Classification_Descriptio || '').trim(); }
+function getEthos(p) { return (p.Ethos_Description || '').trim(); }
 
 // POPUP
 function getVal(p, ...keys) {
@@ -336,18 +339,24 @@ function buildPopup(p) {
 // DROPDOWNS
 function buildDropdowns() {
   const irishVals = new Set();
+  const ethosVals = new Set();
   schools.forEach(({props: p}) => {
-    const v = getIrish(p); if (v) irishVals.add(v);
+    const iv = getIrish(p); if (iv) irishVals.add(iv);
+    const ev = getEthos(p); if (ev) ethosVals.add(ev);
   });
-  const sel = document.getElementById('irish-select');
-  const opt = sel.options[0].outerHTML;
-  sel.innerHTML = opt + [...irishVals].sort().map(v => `<option value="${v}">${v}</option>`).join('');
+  const irishSel = document.getElementById('irish-select');
+  irishSel.innerHTML = irishSel.options[0].outerHTML +
+    [...irishVals].sort().map(v => `<option value="${v}">${v}</option>`).join('');
+  const ethosSel = document.getElementById('ethos-select');
+  ethosSel.innerHTML = ethosSel.options[0].outerHTML +
+    [...ethosVals].sort().map(v => `<option value="${v}">${v}</option>`).join('');
 }
 
 // FILTER & RENDER
 function passesFilter(p) {
   if (genderFilter !== 'all' && getGender(p) !== genderFilter) return false;
   if (irishFilter  !== 'all' && getIrish(p)  !== irishFilter)  return false;
+  if (ethosFilter  !== 'all' && getEthos(p)  !== ethosFilter)  return false;
   return true;
 }
 
@@ -377,6 +386,7 @@ function setGender(g) {
 }
 
 function setIrish(v)     { irishFilter = v; render(); }
+function setEthos(v)     { ethosFilter = v; render(); }
 function filterByName(v) { searchTerm  = v.trim().toLowerCase(); render(); }
 
 // DATA LOADING
